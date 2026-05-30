@@ -1,0 +1,283 @@
+# =========================================================================
+# POSify API HTTP Request - REST Client File
+# Install the "REST Client" extension (by Huachao Mao) in VS Code/Antigravity IDE
+# to enable the "Send Request" buttons above each block.
+# =========================================================================
+
+@baseUrl = http://localhost:5000/api/v1
+
+# ==========================================
+# 1. AUTENTIKASI
+# ==========================================
+
+### Login Admin (Saves token automatically for subsequent requests)
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@posify.com",
+  "password": "admin123"
+}
+
+### Extract Admin Token
+@adminToken = {{loginAdmin.response.body.data.accessToken}}
+@adminRefreshToken = {{loginAdmin.response.body.data.refreshToken}}
+
+
+### Login Kasir (Saves token automatically for subsequent requests)
+# @name loginCashier
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "kasir@posify.com",
+  "password": "admin123"
+}
+
+### Extract Kasir Token
+@kasirToken = {{loginCashier.response.body.data.accessToken}}
+
+
+### Refresh Access Token (Uses Saved Admin Refresh Token)
+# @name refreshAdmin
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{adminRefreshToken}}"
+}
+
+
+### Logout (Requires Admin Token)
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{adminToken}}
+
+
+# ==========================================
+# 2. MASTER KATEGORI
+# ==========================================
+
+### Buat Kategori Baru (Admin Only)
+# @name createCategory
+POST {{baseUrl}}/categories
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Makanan & Minuman"
+}
+
+### Ambil ID Kategori Yang Baru Dibuat
+@categoryId = {{createCategory.response.body.data.id}}
+
+
+### List Semua Kategori (Bisa diakses Kasir)
+GET {{baseUrl}}/categories
+Authorization: Bearer {{kasirToken}}
+
+
+### Detail Kategori Berdasarkan ID (Bisa diakses Kasir)
+GET {{baseUrl}}/categories/{{categoryId}}
+Authorization: Bearer {{kasirToken}}
+
+
+### Update Kategori (Admin Only)
+PUT {{baseUrl}}/categories/{{categoryId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "F&B (Food & Beverages)"
+}
+
+
+### Hapus Kategori (Admin Only - Akan gagal bila dikaitkan ke Produk)
+DELETE {{baseUrl}}/categories/{{categoryId}}
+Authorization: Bearer {{adminToken}}
+
+
+# ==========================================
+# 3. MASTER UNIT SATUAN
+# ==========================================
+
+### Buat Unit Baru (Admin Only)
+# @name createUnit
+POST {{baseUrl}}/units
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Botol"
+}
+
+### Ambil ID Unit Yang Baru Dibuat
+@unitId = {{createUnit.response.body.data.id}}
+
+
+### List Semua Unit (Bisa diakses Kasir)
+GET {{baseUrl}}/units
+Authorization: Bearer {{kasirToken}}
+
+
+### Detail Unit Berdasarkan ID (Bisa diakses Kasir)
+GET {{baseUrl}}/units/{{unitId}}
+Authorization: Bearer {{kasirToken}}
+
+
+### Update Unit (Admin Only)
+PUT {{baseUrl}}/units/{{unitId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Btl (Botol)"
+}
+
+
+# ==========================================
+# 4. MANAJEMEN PRODUK
+# ==========================================
+
+### Buat Produk Baru (Admin Only)
+# @name createProduct
+POST {{baseUrl}}/products
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Kopi Susu Gula Aren",
+  "barcode": "8990123456",
+  "description": "Kopi susu segar kemasan botol",
+  "price": 18000,
+  "costPrice": 12000,
+  "stock": 50,
+  "minStock": 5,
+  "categoryId": {{categoryId}},
+  "unitId": {{unitId}}
+}
+
+### Ambil ID Produk Yang Baru Dibuat
+@productId = {{createProduct.response.body.data.id}}
+
+
+### List Semua Produk dengan Filter & Pagination (Kasir & Admin)
+GET {{baseUrl}}/products?page=1&limit=10&search=&lowStock=false
+Authorization: Bearer {{kasirToken}}
+
+
+### Detail Produk Berdasarkan ID (Kasir & Admin)
+GET {{baseUrl}}/products/{{productId}}
+Authorization: Bearer {{kasirToken}}
+
+
+### Update Produk (Admin Only)
+PUT {{baseUrl}}/products/{{productId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "price": 20000,
+  "minStock": 10
+}
+
+
+# ==========================================
+# 5. MANAJEMEN STOK
+# ==========================================
+
+### Penyesuaian Stok Manual (IN - Menambah Stok) (Admin Only)
+POST {{baseUrl}}/stock/adjust
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "productId": {{productId}},
+  "quantity": 20,
+  "type": "IN",
+  "description": "Kiriman barang masuk baru dari supplier"
+}
+
+
+### Penyesuaian Stok Manual (OUT - Mengurangi Stok) (Admin Only)
+POST {{baseUrl}}/stock/adjust
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "productId": {{productId}},
+  "quantity": 5,
+  "type": "OUT",
+  "description": "Penyesuaian barang bocor/rusak di gudang"
+}
+
+
+### Riwayat Keluar Masuk Stok Produk (Kasir & Admin)
+GET {{baseUrl}}/stock/movements/{{productId}}
+Authorization: Bearer {{kasirToken}}
+
+
+# ==========================================
+# 6. TRANSAKSI KASIR (POS)
+# ==========================================
+
+### Ambil Metode Pembayaran
+# @name getPaymentMethods
+GET {{baseUrl}}/payment-methods
+Authorization: Bearer {{kasirToken}}
+
+### Ambil ID Metode Pembayaran (Cash/QRIS/Transfer)
+@paymentMethodId = {{getPaymentMethods.response.body.data[0].id}}
+
+
+### Buat Transaksi Penjualan Baru (Kasir & Admin)
+# @name createTransaction
+POST {{baseUrl}}/transactions
+Authorization: Bearer {{kasirToken}}
+Content-Type: application/json
+
+{
+  "paidAmount": 50000,
+  "paymentMethodId": {{paymentMethodId}},
+  "tax": 11,
+  "discount": 5000,
+  "items": [
+    {
+      "productId": {{productId}},
+      "quantity": 2,
+      "discount": 1000
+    }
+  ]
+}
+
+### Ambil ID Transaksi Baru
+@transactionId = {{createTransaction.response.body.data.id}}
+
+
+### List Riwayat Transaksi (Kasir & Admin)
+GET {{baseUrl}}/transactions?page=1&limit=10
+Authorization: Bearer {{kasirToken}}
+
+
+### Detail Transaksi Berdasarkan ID (Kasir & Admin)
+GET {{baseUrl}}/transactions/{{transactionId}}
+Authorization: Bearer {{kasirToken}}
+
+
+# ==========================================
+# 7. DASHBOARD & LAPORAN
+# ==========================================
+
+### Ringkasan Statistik Dashboard (Admin & Manager Only)
+GET {{baseUrl}}/dashboard/summary
+Authorization: Bearer {{adminToken}}
+
+
+### Tren Grafik Penjualan Harian (Admin & Manager Only)
+GET {{baseUrl}}/dashboard/sales-trend?days=7
+Authorization: Bearer {{adminToken}}
+
+
+### Daftar Produk Terlaris (Admin & Manager Only)
+GET {{baseUrl}}/dashboard/top-products?limit=5
+Authorization: Bearer {{adminToken}}
