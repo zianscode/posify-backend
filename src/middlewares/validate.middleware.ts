@@ -13,7 +13,14 @@ export const validate = (schema: ZodTypeAny) => {
       
       // Update request properties with validated/coerced values
       if (parsed.body) req.body = parsed.body;
-      if (parsed.query) req.query = parsed.query;
+      if (parsed.query) {
+        // Express v5: req.query is getter-only, use Object.defineProperty
+        Object.defineProperty(req, "query", {
+          value: parsed.query,
+          writable: true,
+          configurable: true,
+        });
+      }
       if (parsed.params) req.params = parsed.params;
       
       next();
