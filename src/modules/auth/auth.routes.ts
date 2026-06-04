@@ -2,7 +2,7 @@ import { Router } from "express";
 import { AuthController } from "./auth.controller";
 import { validate } from "../../middlewares/validate.middleware";
 import { authMiddleware } from "../../middlewares/auth.middleware";
-import { loginSchema, refreshTokenSchema } from "./auth.validation";
+import { loginSchema, refreshTokenSchema, changePasswordSchema, updateProfileSchema } from "./auth.validation";
 
 const router = Router();
 const authController = new AuthController();
@@ -21,5 +21,30 @@ router.post("/refresh", validate(refreshTokenSchema), (req, res, next) => {
 router.post("/logout", authMiddleware, (req, res, next) => {
   authController.logout(req, res, next);
 });
+
+// Protected: GET /api/v1/auth/profile
+router.get("/profile", authMiddleware, (req, res, next) => {
+  authController.profile(req, res, next);
+});
+
+// Protected: PUT /api/v1/auth/change-password
+router.put(
+  "/change-password",
+  authMiddleware,
+  validate(changePasswordSchema),
+  (req, res, next) => {
+    authController.changePassword(req, res, next);
+  },
+);
+
+// Protected: PUT /api/v1/auth/profile (update name & email)
+router.put(
+  "/profile",
+  authMiddleware,
+  validate(updateProfileSchema),
+  (req, res, next) => {
+    authController.updateProfile(req, res, next);
+  },
+);
 
 export default router;

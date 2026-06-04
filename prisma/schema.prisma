@@ -168,3 +168,13 @@ model ProductAddOn {
   @@id([productId, addOnId])
   @@map("product_add_ons")
 }
+
+model Setting {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}

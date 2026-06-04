@@ -1,13 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import { AuthService } from "./auth.service";
+import { UserService } from "../user/user.service";
 import { sendSuccess } from "../../shared/response";
 
 const authService = new AuthService();
+const userService = new UserService();
 
 export class AuthController {
-  /**
-   * Handle user login request
-   */
   async login(req: Request, res: Response, next: NextFunction) {
     try {
       const { email, password } = req.body;
@@ -23,9 +22,6 @@ export class AuthController {
     }
   }
 
-  /**
-   * Handle access token refresh request
-   */
   async refreshToken(req: Request, res: Response, next: NextFunction) {
     try {
       const { refreshToken } = req.body;
@@ -41,16 +37,57 @@ export class AuthController {
     }
   }
 
-  /**
-   * Handle user logout request
-   */
   async logout(req: Request, res: Response, next: NextFunction) {
     try {
-      // For stateless JWTs, client simply discards the token.
-      // Return a success response.
       sendSuccess({
         res,
         message: "Logout berhasil",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async profile(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.userId;
+      const result = await userService.getProfile(userId);
+
+      sendSuccess({
+        res,
+        message: "Profil berhasil diambil",
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async changePassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.userId;
+      const { currentPassword, newPassword } = req.body;
+      await userService.changePassword(userId, currentPassword, newPassword);
+
+      sendSuccess({
+        res,
+        message: "Password berhasil diubah",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async updateProfile(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.userId;
+      const { name, email } = req.body;
+      const result = await userService.updateProfile(userId, { name, email });
+
+      sendSuccess({
+        res,
+        message: "Profil berhasil diperbarui",
+        data: result,
       });
     } catch (error) {
       next(error);

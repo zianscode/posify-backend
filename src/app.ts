@@ -17,6 +17,9 @@ import stockRouter from "./modules/stock/stock.routes";
 import transactionRouter from "./modules/transaction/transaction.routes";
 import dashboardRouter from "./modules/dashboard/dashboard.routes";
 import addOnRouter from "./modules/addon/addon.routes";
+import userRouter from "./modules/user/user.routes";
+import settingRouter from "./modules/setting/setting.routes";
+import reportRouter from "./modules/report/report.routes";
 
 const app = express();
 const server = createServer(app);
@@ -76,6 +79,9 @@ app.use("/api/v1/stock", stockRouter);
 app.use("/api/v1/transactions", transactionRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
 app.use("/api/v1/add-ons", addOnRouter);
+app.use("/api/v1/users", userRouter);
+app.use("/api/v1/settings", settingRouter);
+app.use("/api/v1/reports", reportRouter);
 
 // Error handling middleware
 app.use(errorMiddleware);
