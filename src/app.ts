@@ -16,6 +16,7 @@ import paymentMethodRouter from "./modules/payment-method/payment-method.routes"
 import stockRouter from "./modules/stock/stock.routes";
 import transactionRouter from "./modules/transaction/transaction.routes";
 import dashboardRouter from "./modules/dashboard/dashboard.routes";
+import addOnRouter from "./modules/addon/addon.routes";
 
 const app = express();
 const server = createServer(app);
@@ -74,6 +75,7 @@ app.use("/api/v1/payment-methods", paymentMethodRouter);
 app.use("/api/v1/stock", stockRouter);
 app.use("/api/v1/transactions", transactionRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
+app.use("/api/v1/add-ons", addOnRouter);
 
 // Error handling middleware
 app.use(errorMiddleware);

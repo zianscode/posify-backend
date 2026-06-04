@@ -281,3 +281,50 @@ Authorization: Bearer {{adminToken}}
 ### Daftar Produk Terlaris (Admin & Manager Only)
 GET {{baseUrl}}/dashboard/top-products?limit=5
 Authorization: Bearer {{adminToken}}
+
+
+# ==========================================
+# 8. MASTER ADD-ON
+# ==========================================
+
+### Buat Add-On Baru (Admin Only)
+# @name createAddOn
+POST {{baseUrl}}/add-ons
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Extra Keju",
+  "price": 5000,
+  "description": "Tambahan keju mozarella"
+}
+
+### Ambil ID Add-On Yang Baru Dibuat
+@addOnId = {{createAddOn.response.body.data.id}}
+
+
+### List Semua Add-On (Bisa diakses Kasir)
+GET {{baseUrl}}/add-ons
+Authorization: Bearer {{kasirToken}}
+
+
+### Detail Add-On Berdasarkan ID (Bisa diakses Kasir)
+GET {{baseUrl}}/add-ons/{{addOnId}}
+Authorization: Bearer {{kasirToken}}
+
+
+### Update Add-On (Admin Only)
+PUT {{baseUrl}}/add-ons/{{addOnId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Extra Keju Mozarella",
+  "price": 6000,
+  "description": "Tambahan keju mozarella premium"
+}
+
+
+### Hapus Add-On (Admin Only - Akan gagal bila dikaitkan ke Produk)
+DELETE {{baseUrl}}/add-ons/{{addOnId}}
+Authorization: Bearer {{adminToken}}

@@ -80,6 +80,7 @@ model Product {
   unit             Unit              @relation(fields: [unitId], references: [id])
   stockMovements   StockMovement[]
   transactionItems TransactionItem[]
+  addOns           ProductAddOn[]
 
   @@map("products")
 }
@@ -144,4 +145,26 @@ model TransactionItem {
   product       Product     @relation(fields: [productId], references: [id])
 
   @@map("transaction_items")
+}
+
+model AddOn {
+  id          Int             @id @default(autoincrement())
+  name        String          @unique
+  price       Decimal         @db.Decimal(12, 2)
+  description String?
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+  products    ProductAddOn[]
+
+  @@map("add_ons")
+}
+
+model ProductAddOn {
+  productId Int     @map("product_id")
+  addOnId   Int     @map("add_on_id")
+  addOn     AddOn   @relation(fields: [addOnId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([productId, addOnId])
+  @@map("product_add_ons")
 }
