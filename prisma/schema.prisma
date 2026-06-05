@@ -178,3 +178,23 @@ model Setting {
 
   @@map("settings")
 }
+
+enum NotificationType {
+  STOCK_ALERT
+  NEW_TRANSACTION
+  SYSTEM
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  type      NotificationType
+  title     String
+  message   String?
+  link      String?
+  isRead    Boolean          @default(false) @map("is_read")
+  outletId  Int?             @map("outlet_id")
+  userId    Int?             @map("user_id")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  @@map("notifications")
+}

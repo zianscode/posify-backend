@@ -20,6 +20,7 @@ import addOnRouter from "./modules/addon/addon.routes";
 import userRouter from "./modules/user/user.routes";
 import settingRouter from "./modules/setting/setting.routes";
 import reportRouter from "./modules/report/report.routes";
+import notificationRouter from "./modules/notification/notification.routes";
 
 const app = express();
 const server = createServer(app);
@@ -82,6 +83,7 @@ app.use("/api/v1/add-ons", addOnRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/settings", settingRouter);
 app.use("/api/v1/reports", reportRouter);
+app.use("/api/v1/notifications", notificationRouter);
 
 // Error handling middleware
 app.use(errorMiddleware);

@@ -29,7 +29,7 @@ export class TransactionController {
    */
   async list(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, startDate, endDate, userId, paymentMethodId } = req.query as any;
+      const { page, limit, startDate, endDate, userId, paymentMethodId, search } = req.query as any;
 
       const { transactions, meta } = await transactionService.getTransactions({
         page,
@@ -38,6 +38,7 @@ export class TransactionController {
         endDate,
         userId,
         paymentMethodId,
+        search,
       });
 
       sendSuccess({

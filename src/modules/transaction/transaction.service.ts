@@ -1,5 +1,6 @@
 import { prisma } from "../../config/database";
 import { NotFoundError, BadRequestError } from "../../shared/errors";
+import { NotificationService } from "../notification/notification.service";
 
 export interface GetTransactionsFilters {
   page: number;
@@ -8,7 +9,10 @@ export interface GetTransactionsFilters {
   endDate?: string;
   userId?: number;
   paymentMethodId?: number;
+  search?: string;
 }
+
+const notificationService = new NotificationService();
 
 export class TransactionService {
   /**
@@ -85,7 +89,7 @@ export class TransactionService {
     }
 
     // 4. Atomically insert transaction, items, update stocks and write movements logs
-    return prisma.$transaction(async (tx) => {
+    const transaction = await prisma.$transaction(async (tx) => {
       // Verify payment method exists
       const paymentMethod = await tx.paymentMethod.findUnique({
         where: { id: paymentMethodId },
@@ -172,13 +176,45 @@ export class TransactionService {
 
       return transaction;
     });
+
+    // Create notifications after successful transaction
+    await notificationService.create({
+      type: "NEW_TRANSACTION",
+      title: "Transaksi Baru",
+      message: `Transaksi ${transaction.invoiceNo} sebesar Rp ${Number(transaction.grandTotal).toLocaleString("id-ID")}`,
+      link: `/history`,
+      outletId,
+    });
+
+    // Check low stock for each product
+    await this.notifyLowStock(outletId, itemsData);
+
+    return transaction;
+  }
+
+  private async notifyLowStock(outletId: number, itemsData: any[]) {
+    for (const item of itemsData) {
+      const product = await prisma.product.findUnique({
+        where: { id: item.productId },
+      });
+
+      if (product && product.stock <= product.minStock) {
+        await notificationService.create({
+          type: "STOCK_ALERT",
+          title: "Stok Menipis",
+          message: `Stok "${product.name}" tersisa ${product.stock} dari minimum ${product.minStock}`,
+          link: `/stock`,
+          outletId,
+        });
+      }
+    }
   }
 
   /**
    * Get paginated transaction history with filters
    */
   async getTransactions(filters: GetTransactionsFilters) {
-    const { page, limit, startDate, endDate, userId, paymentMethodId } = filters;
+    const { page, limit, startDate, endDate, userId, paymentMethodId, search } = filters;
     const skip = (page - 1) * limit;
     const take = limit;
 
@@ -202,6 +238,13 @@ export class TransactionService {
         endOfDate.setHours(23, 59, 59, 999);
         where.createdAt.lte = endOfDate;
       }
+    }
+
+    if (search) {
+      where.OR = [
+        { invoiceNo: { contains: search, mode: "insensitive" } },
+        { user: { name: { contains: search, mode: "insensitive" } } },
+      ];
     }
 
     const [transactions, total] = await Promise.all([
