@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
 import { createServer } from "http";
 import { env } from "./config/env";
 import { initSocket } from "./config/socket";
@@ -40,6 +41,9 @@ app.use(
 // Body Parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve uploaded files
+app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
 // Global Request Logger
 app.use(loggerMiddleware);

@@ -21,6 +21,7 @@ export const createProductSchema = z.object({
     unitId: z.number({
       message: "ID unit wajib diisi",
     }).int("ID unit harus berupa bilangan bulat"),
+    image: z.string().optional().nullable(),
   }),
 });
 
@@ -40,6 +41,7 @@ export const updateProductSchema = z.object({
     minStock: z.number().nonnegative("Minimal stok tidak boleh negatif").optional(),
     categoryId: z.number().int("ID kategori harus berupa bilangan bulat").optional(),
     unitId: z.number().int("ID unit harus berupa bilangan bulat").optional(),
+    image: z.string().optional().nullable(),
   }),
 });
 

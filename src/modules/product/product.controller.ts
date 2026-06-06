@@ -10,7 +10,11 @@ export class ProductController {
    */
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await productService.createProduct(req.body);
+      const data: any = { ...req.body };
+      if (req.file) {
+        data.image = `products/${req.file.filename}`;
+      }
+      const result = await productService.createProduct(data);
 
       sendSuccess({
         res,
@@ -74,7 +78,11 @@ export class ProductController {
   async update(req: Request, res: Response, next: NextFunction) {
     try {
       const id = Number(req.params.id);
-      const result = await productService.updateProduct(id, req.body);
+      const data: any = { ...req.body };
+      if (req.file) {
+        data.image = `products/${req.file.filename}`;
+      }
+      const result = await productService.updateProduct(id, data);
 
       sendSuccess({
         res,

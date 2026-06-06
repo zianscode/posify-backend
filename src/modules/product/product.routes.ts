@@ -3,6 +3,8 @@ import { ProductController } from "./product.controller";
 import { authMiddleware } from "../../middlewares/auth.middleware";
 import { roleMiddleware } from "../../middlewares/role.middleware";
 import { validate } from "../../middlewares/validate.middleware";
+import { uploadProductImage } from "../../config/upload";
+import { convertFormData } from "../../middlewares/convertFormData.middleware";
 import {
   createProductSchema,
   updateProductSchema,
@@ -28,6 +30,8 @@ router.post(
   "/",
   authMiddleware,
   roleMiddleware(["admin", "manager"]),
+  uploadProductImage,
+  convertFormData,
   validate(createProductSchema),
   (req, res, next) => {
     productController.create(req, res, next);
@@ -39,6 +43,8 @@ router.put(
   "/:id",
   authMiddleware,
   roleMiddleware(["admin", "manager"]),
+  uploadProductImage,
+  convertFormData,
   validate(updateProductSchema),
   (req, res, next) => {
     productController.update(req, res, next);

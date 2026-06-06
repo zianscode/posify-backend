@@ -1,5 +1,6 @@
 import { prisma } from "../../config/database";
 import { NotFoundError, BadRequestError } from "../../shared/errors";
+import { deleteImage } from "../../config/upload";
 
 export interface GetProductsFilters {
   page: number;
@@ -24,6 +25,7 @@ export class ProductService {
     minStock?: number;
     categoryId: number;
     unitId: number;
+    image?: string | null;
   }) {
     // 1. Check if category exists
     const category = await prisma.category.findUnique({
@@ -62,6 +64,7 @@ export class ProductService {
         minStock: data.minStock ?? 0,
         categoryId: data.categoryId,
         unitId: data.unitId,
+        image: data.image ?? null,
       },
       include: {
         category: true,
@@ -170,10 +173,11 @@ export class ProductService {
       minStock?: number;
       categoryId?: number;
       unitId?: number;
+      image?: string | null;
     }
   ) {
     // 1. Check if product exists
-    await this.getProductById(id);
+    const existing = await this.getProductById(id);
 
     // 2. Validate category if updated
     if (data.categoryId) {
@@ -218,6 +222,12 @@ export class ProductService {
     if (data.minStock !== undefined) updateData.minStock = data.minStock;
     if (data.categoryId !== undefined) updateData.categoryId = data.categoryId;
     if (data.unitId !== undefined) updateData.unitId = data.unitId;
+    if (data.image !== undefined) updateData.image = data.image;
+
+    // Delete old image if a new one is provided
+    if (data.image && existing.image) {
+      deleteImage(existing.image);
+    }
 
     return prisma.product.update({
       where: { id },
@@ -234,9 +244,9 @@ export class ProductService {
    */
   async deleteProduct(id: number) {
     // 1. Check if product exists
-    await this.getProductById(id);
+    const product = await this.getProductById(id);
 
-    // 2. Check if product is associated with transaction items
+    // 3. Check if product is associated with transaction items
     const transactionItemCount = await prisma.transactionItem.count({
       where: { productId: id },
     });
@@ -245,6 +255,11 @@ export class ProductService {
       throw new BadRequestError(
         "Produk tidak dapat dihapus karena sudah memiliki riwayat transaksi"
       );
+    }
+
+    // 4. Delete product image file if exists
+    if (product.image) {
+      deleteImage(product.image);
     }
 
     return prisma.product.delete({
