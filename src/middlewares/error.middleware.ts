@@ -8,10 +8,10 @@ export const errorMiddleware = (
   res: Response,
   next: NextFunction
 ) => {
-  // Log the error in development/console
-  console.error("❌ Error encountered:", err);
-
   if (err instanceof HttpError) {
+    if (err.statusCode >= 500) {
+      console.error("❌ Error encountered:", err);
+    }
     return sendError({
       res,
       statusCode: err.statusCode,
