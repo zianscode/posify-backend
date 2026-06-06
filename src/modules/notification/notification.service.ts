@@ -94,9 +94,9 @@ export class NotificationService {
 
     if (data.outletId) {
       io.to(`outlet:${data.outletId}`).emit("new-notification", notification);
+    } else {
+      io.emit("new-notification", notification);
     }
-
-    io.emit("new-notification", notification);
 
     return notification;
   }
