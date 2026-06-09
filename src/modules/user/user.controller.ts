@@ -56,7 +56,7 @@ export class UserController {
 
       sendSuccess({
         res,
-        message: "Detail user belrhasil diambil",
+        message: "Detail user berhasil diambil",
         data: result,
       });
     } catch (error) {

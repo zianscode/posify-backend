@@ -8,11 +8,11 @@ import { adjustStockSchema, getMovementsSchema } from "./stock.validation";
 const router = Router();
 const stockController = new StockController();
 
-// POST adjust stock: Protected (admin, manager only)
+// POST adjust stock: Protected (admin only)
 router.post(
   "/adjust",
   authMiddleware,
-  roleMiddleware(["admin", "manager"]),
+  roleMiddleware(["admin"]),
   validate(adjustStockSchema),
   (req, res, next) => {
     stockController.adjust(req, res, next);

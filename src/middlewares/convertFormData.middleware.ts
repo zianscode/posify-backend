@@ -11,6 +11,12 @@ const NUMBER_FIELDS = [
   "category_id",
   "unitId",
   "unit_id",
+  "discount",
+  "tax",
+  "paidAmount",
+  "paid_amount",
+  "quantity",
+  "addOnIds",
 ];
 
 export const convertFormData = (req: Request, _res: Response, next: NextFunction) => {
@@ -19,7 +25,7 @@ export const convertFormData = (req: Request, _res: Response, next: NextFunction
       if (NUMBER_FIELDS.includes(key) && typeof req.body[key] === "string") {
         const trimmed = req.body[key].trim();
         if (trimmed === "") {
-          req.body[key] = undefined;
+          delete req.body[key];
         } else {
           const num = Number(trimmed);
           req.body[key] = isNaN(num) ? req.body[key] : num;

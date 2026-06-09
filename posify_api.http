@@ -1,5 +1,5 @@
 # =========================================================================
-# POSify API HTTP Request - REST Client File
+# Warmindo API HTTP Request - REST Client File
 # Install the "REST Client" extension (by Huachao Mao) in VS Code/Antigravity IDE
 # to enable the "Send Request" buttons above each block.
 # =========================================================================
@@ -16,7 +16,7 @@ POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
-  "email": "admin@posify.com",
+  "email": "admin@gmail.com",
   "password": "admin123"
 }
 
@@ -25,13 +25,13 @@ Content-Type: application/json
 @adminRefreshToken = {{loginAdmin.response.body.data.refreshToken}}
 
 
-### Login Kasir (Saves token automatically for subsequent requests)
+### Login Kasir (only after seed)
 # @name loginCashier
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
-  "email": "kasir@posify.com",
+  "email": "kasir@gmail.com",
   "password": "admin123"
 }
 
@@ -39,7 +39,7 @@ Content-Type: application/json
 @kasirToken = {{loginCashier.response.body.data.accessToken}}
 
 
-### Refresh Access Token (Uses Saved Admin Refresh Token)
+### Refresh Access Token
 # @name refreshAdmin
 POST {{baseUrl}}/auth/refresh
 Content-Type: application/json
@@ -49,90 +49,37 @@ Content-Type: application/json
 }
 
 
-### Logout (Requires Admin Token)
+### Logout
 POST {{baseUrl}}/auth/logout
 Authorization: Bearer {{adminToken}}
 
 
 # ==========================================
-# 2. MASTER KATEGORI
+# 2. MASTER KATEGORI (READ-ONLY)
 # ==========================================
 
-### Buat Kategori Baru (Admin Only)
-# @name createCategory
-POST {{baseUrl}}/categories
-Authorization: Bearer {{adminToken}}
-Content-Type: application/json
-
-{
-  "name": "Makanan & Minuman"
-}
-
-### Ambil ID Kategori Yang Baru Dibuat
-@categoryId = {{createCategory.response.body.data.id}}
-
-
-### List Semua Kategori (Bisa diakses Kasir)
+### List Semua Kategori
 GET {{baseUrl}}/categories
 Authorization: Bearer {{kasirToken}}
 
 
-### Detail Kategori Berdasarkan ID (Bisa diakses Kasir)
-GET {{baseUrl}}/categories/{{categoryId}}
+### Detail Kategori Berdasarkan ID
+GET {{baseUrl}}/categories/1
 Authorization: Bearer {{kasirToken}}
 
 
-### Update Kategori (Admin Only)
-PUT {{baseUrl}}/categories/{{categoryId}}
-Authorization: Bearer {{adminToken}}
-Content-Type: application/json
-
-{
-  "name": "F&B (Food & Beverages)"
-}
-
-
-### Hapus Kategori (Admin Only - Akan gagal bila dikaitkan ke Produk)
-DELETE {{baseUrl}}/categories/{{categoryId}}
-Authorization: Bearer {{adminToken}}
-
-
 # ==========================================
-# 3. MASTER UNIT SATUAN
+# 3. MASTER UNIT SATUAN (READ-ONLY)
 # ==========================================
 
-### Buat Unit Baru (Admin Only)
-# @name createUnit
-POST {{baseUrl}}/units
-Authorization: Bearer {{adminToken}}
-Content-Type: application/json
-
-{
-  "name": "Botol"
-}
-
-### Ambil ID Unit Yang Baru Dibuat
-@unitId = {{createUnit.response.body.data.id}}
-
-
-### List Semua Unit (Bisa diakses Kasir)
+### List Semua Unit
 GET {{baseUrl}}/units
 Authorization: Bearer {{kasirToken}}
 
 
-### Detail Unit Berdasarkan ID (Bisa diakses Kasir)
-GET {{baseUrl}}/units/{{unitId}}
+### Detail Unit Berdasarkan ID
+GET {{baseUrl}}/units/1
 Authorization: Bearer {{kasirToken}}
-
-
-### Update Unit (Admin Only)
-PUT {{baseUrl}}/units/{{unitId}}
-Authorization: Bearer {{adminToken}}
-Content-Type: application/json
-
-{
-  "name": "Btl (Botol)"
-}
 
 
 # ==========================================
@@ -146,47 +93,51 @@ Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {
-  "name": "Kopi Susu Gula Aren",
-  "barcode": "8990123456",
-  "description": "Kopi susu segar kemasan botol",
-  "price": 18000,
-  "costPrice": 12000,
+  "name": "Es Teh Manis",
+  "description": "Es teh manis segar",
+  "price": 5000,
+  "costPrice": 1500,
   "stock": 50,
-  "minStock": 5,
-  "categoryId": {{categoryId}},
-  "unitId": {{unitId}}
+  "minStock": 10,
+  "categoryId": 7,
+  "unitId": 3
 }
 
 ### Ambil ID Produk Yang Baru Dibuat
 @productId = {{createProduct.response.body.data.id}}
 
 
-### List Semua Produk dengan Filter & Pagination (Kasir & Admin)
+### List Semua Produk dengan Filter & Pagination
 GET {{baseUrl}}/products?page=1&limit=10&search=&lowStock=false
 Authorization: Bearer {{kasirToken}}
 
 
-### Detail Produk Berdasarkan ID (Kasir & Admin)
+### Detail Produk Berdasarkan ID
 GET {{baseUrl}}/products/{{productId}}
 Authorization: Bearer {{kasirToken}}
 
 
-### Update Produk (Admin Only)
+### Update Produk (Admin or Manager)
 PUT {{baseUrl}}/products/{{productId}}
 Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {
-  "price": 20000,
+  "price": 6000,
   "minStock": 10
 }
+
+
+### Hapus Produk (Admin Only)
+DELETE {{baseUrl}}/products/{{productId}}
+Authorization: Bearer {{adminToken}}
 
 
 # ==========================================
 # 5. MANAJEMEN STOK
 # ==========================================
 
-### Penyesuaian Stok Manual (IN - Menambah Stok) (Admin Only)
+### Penyesuaian Stok Manual (Admin Only)
 POST {{baseUrl}}/stock/adjust
 Authorization: Bearer {{adminToken}}
 Content-Type: application/json
@@ -199,20 +150,7 @@ Content-Type: application/json
 }
 
 
-### Penyesuaian Stok Manual (OUT - Mengurangi Stok) (Admin Only)
-POST {{baseUrl}}/stock/adjust
-Authorization: Bearer {{adminToken}}
-Content-Type: application/json
-
-{
-  "productId": {{productId}},
-  "quantity": 5,
-  "type": "OUT",
-  "description": "Penyesuaian barang bocor/rusak di gudang"
-}
-
-
-### Riwayat Keluar Masuk Stok Produk (Kasir & Admin)
+### Riwayat Keluar Masuk Stok Produk
 GET {{baseUrl}}/stock/movements/{{productId}}
 Authorization: Bearer {{kasirToken}}
 
@@ -226,7 +164,7 @@ Authorization: Bearer {{kasirToken}}
 GET {{baseUrl}}/payment-methods
 Authorization: Bearer {{kasirToken}}
 
-### Ambil ID Metode Pembayaran (Cash/QRIS/Transfer)
+### Ambil ID Metode Pembayaran (Tunai/QRIS/GoPay/OVO/Transfer Bank)
 @paymentMethodId = {{getPaymentMethods.response.body.data[0].id}}
 
 
@@ -254,61 +192,119 @@ Content-Type: application/json
 @transactionId = {{createTransaction.response.body.data.id}}
 
 
-### List Riwayat Transaksi (Kasir & Admin)
+### List Riwayat Transaksi
 GET {{baseUrl}}/transactions?page=1&limit=10
 Authorization: Bearer {{kasirToken}}
 
 
-### Detail Transaksi Berdasarkan ID (Kasir & Admin)
+### Detail Transaksi Berdasarkan ID
 GET {{baseUrl}}/transactions/{{transactionId}}
 Authorization: Bearer {{kasirToken}}
 
 
 # ==========================================
-# 7. DASHBOARD & LAPORAN
+# 7. DASHBOARD (Admin Only)
 # ==========================================
 
-### Ringkasan Statistik Dashboard (Admin & Manager Only)
+### Ringkasan Statistik Dashboard
 GET {{baseUrl}}/dashboard/summary
 Authorization: Bearer {{adminToken}}
 
 
-### Tren Grafik Penjualan Harian (Admin & Manager Only)
+### Tren Grafik Penjualan Harian
 GET {{baseUrl}}/dashboard/sales-trend?days=7
 Authorization: Bearer {{adminToken}}
 
 
-### Daftar Produk Terlaris (Admin & Manager Only)
+### Daftar Produk Terlaris
 GET {{baseUrl}}/dashboard/top-products?limit=5
 Authorization: Bearer {{adminToken}}
 
 
 # ==========================================
-# 8. MASTER ADD-ON
+# 8. LAPORAN (Admin Only)
 # ==========================================
 
-### Buat Add-On Baru (Admin Only)
+### Laporan Penjualan
+GET {{baseUrl}}/reports/sales?startDate=2026-06-01&endDate=2026-06-09
+Authorization: Bearer {{adminToken}}
+
+
+### Laporan Produk
+GET {{baseUrl}}/reports/products
+Authorization: Bearer {{adminToken}}
+
+
+### Laporan Stok
+GET {{baseUrl}}/reports/stock
+Authorization: Bearer {{adminToken}}
+
+
+# ==========================================
+# 9. MANAJEMEN USERS (Admin Only)
+# ==========================================
+
+### Buat Manager Baru
+# @name createManager
+POST {{baseUrl}}/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Budi Santoso",
+  "email": "budi@warmindo.com",
+  "password": "password123",
+  "roleId": 2,
+  "outletId": 1
+}
+
+
+### Buat Kasir Baru
+# @name createCashier
+POST {{baseUrl}}/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Siti Rahmawati",
+  "email": "siti@warmindo.com",
+  "password": "password123",
+  "roleId": 3,
+  "outletId": 1
+}
+
+
+### List Semua Users
+GET {{baseUrl}}/users?page=1&limit=10
+Authorization: Bearer {{adminToken}}
+
+
+# ==========================================
+# 10. MASTER ADD-ON (Admin Only)
+# ==========================================
+
+### Buat Add-On Baru
 # @name createAddOn
 POST {{baseUrl}}/add-ons
 Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {
-  "name": "Extra Keju",
-  "price": 5000,
-  "description": "Tambahan keju mozarella"
+  "name": "Extra Sambal",
+  "price": 2000,
+  "description": "Tambahan sambal terasi"
 }
 
 ### Ambil ID Add-On Yang Baru Dibuat
 @addOnId = {{createAddOn.response.body.data.id}}
 
 
-### List Semua Add-On (Bisa diakses Kasir)
+### List Semua Add-On
 GET {{baseUrl}}/add-ons
 Authorization: Bearer {{kasirToken}}
 
 
-### Detail Add-On Berdasarkan ID (Bisa diakses Kasir)
+### Detail Add-On Berdasarkan ID
 GET {{baseUrl}}/add-ons/{{addOnId}}
 Authorization: Bearer {{kasirToken}}
 
@@ -319,12 +315,12 @@ Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {
-  "name": "Extra Keju Mozarella",
-  "price": 6000,
-  "description": "Tambahan keju mozarella premium"
+  "name": "Extra Sambal Terasi",
+  "price": 3000,
+  "description": "Tambahan sambal terasi pedas"
 }
 
 
-### Hapus Add-On (Admin Only - Akan gagal bila dikaitkan ke Produk)
+### Hapus Add-On (Admin Only)
 DELETE {{baseUrl}}/add-ons/{{addOnId}}
 Authorization: Bearer {{adminToken}}

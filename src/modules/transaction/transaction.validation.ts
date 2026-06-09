@@ -40,5 +40,6 @@ export const getTransactionsQuerySchema = z.object({
     endDate: z.string().datetime().optional().or(z.string().date().optional()),
     userId: z.coerce.number().int().optional(),
     paymentMethodId: z.coerce.number().int().optional(),
+    search: z.string().optional(),
   }),
 });

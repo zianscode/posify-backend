@@ -108,10 +108,12 @@ export class ReportService {
         COALESCE(SUM(ti.quantity), 0)::float as "quantitySold",
         COALESCE(SUM(ti.total), 0)::float as "totalRevenue"
       FROM products p
-      LEFT JOIN transaction_items ti ON ti.product_id = p.id
-      LEFT JOIN transactions t ON ti.transaction_id = t.id
-        AND t.created_at >= ${start}
-        AND t.created_at <= ${end}
+      LEFT JOIN (
+        SELECT ti.* FROM transaction_items ti
+        JOIN transactions t ON ti.transaction_id = t.id
+          AND t.created_at >= ${start}
+          AND t.created_at <= ${end}
+      ) ti ON ti.product_id = p.id
       GROUP BY p.id, p.name, p.barcode, p.price, p.stock
       ORDER BY "quantitySold" DESC
       LIMIT ${limit}
@@ -139,24 +141,21 @@ export class ReportService {
   }
 
   async getStockReport() {
-    const products = await prisma.product.findMany({
-      where: {
-        stock: { lte: prisma.product.fields.minStock },
-      },
-      include: {
-        category: true,
-        unit: true,
-      },
-      orderBy: {
-        stock: "asc",
-      },
-    });
-
-    const totalProducts = await prisma.product.count();
-    const totalStockValue = await prisma.product.aggregate({
-      _sum: { stock: true },
-      where: { stock: { gt: 0 } },
-    });
+    const [products, totalProducts, totalStockValue] = await Promise.all([
+      prisma.$queryRaw<any[]>`
+        SELECT p.*, c.name as "categoryName", u.name as "unitName"
+        FROM products p
+        LEFT JOIN categories c ON c.id = p.category_id
+        LEFT JOIN units u ON u.id = p.unit_id
+        WHERE p.stock <= p.min_stock
+        ORDER BY p.stock ASC
+      `,
+      prisma.product.count(),
+      prisma.product.aggregate({
+        _sum: { stock: true },
+        where: { stock: { gt: 0 } },
+      }),
+    ]);
 
     return {
       summary: {
@@ -190,8 +189,8 @@ export class ReportService {
       p.barcode ?? "-",
       p.stock,
       p.minStock,
-      p.category?.name ?? "-",
-      p.unit?.name ?? "-",
+      p.categoryName ?? "-",
+      p.unitName ?? "-",
     ]);
 
     return (

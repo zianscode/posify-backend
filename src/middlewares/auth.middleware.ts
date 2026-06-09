@@ -26,6 +26,11 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     req.user = decoded;
     next();
   } catch (error) {
-    next(new UnauthorizedError("Token kadaluarsa atau tidak valid"));
+    if (error instanceof UnauthorizedError) {
+      next(error);
+    } else {
+      console.error("Auth error:", error);
+      next(new UnauthorizedError("Token kadaluarsa atau tidak valid"));
+    }
   }
 };

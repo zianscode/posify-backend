@@ -23,7 +23,7 @@ router.get("/:id", authMiddleware, validate(getAddOnByIdSchema), (req, res, next
 router.post(
   "/",
   authMiddleware,
-  roleMiddleware(["admin", "manager"]),
+  roleMiddleware(["admin"]),
   validate(createAddOnSchema),
   (req, res, next) => {
     addOnController.create(req, res, next);
@@ -33,7 +33,7 @@ router.post(
 router.put(
   "/:id",
   authMiddleware,
-  roleMiddleware(["admin", "manager"]),
+  roleMiddleware(["admin"]),
   validate(updateAddOnSchema),
   (req, res, next) => {
     addOnController.update(req, res, next);
@@ -43,7 +43,7 @@ router.put(
 router.delete(
   "/:id",
   authMiddleware,
-  roleMiddleware(["admin", "manager"]),
+  roleMiddleware(["admin"]),
   validate(getAddOnByIdSchema),
   (req, res, next) => {
     addOnController.delete(req, res, next);

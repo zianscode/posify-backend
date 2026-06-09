@@ -48,8 +48,9 @@ export const notifyStockAlert = (
   if (!io) return;
   if (outletId) {
     io.to(`outlet:${outletId}`).emit("stock-alert", data);
+  } else {
+    io.emit("stock-alert", data);
   }
-  io.emit("stock-alert", data); // broadcast globally
 };
 
 export const notifyNewTransaction = (
@@ -63,5 +64,4 @@ export const notifyNewTransaction = (
 ) => {
   if (!io) return;
   io.to(`outlet:${outletId}`).emit("new-transaction", data);
-  io.emit("new-transaction", data); // broadcast globally
 };

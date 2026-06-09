@@ -12,9 +12,9 @@ import {
 const router = Router();
 const dashboardController = new DashboardController();
 
-// Protect all routes under this router: Only admin and manager can access
+// Protect all routes under this router: Only admin can access
 router.use(authMiddleware);
-router.use(roleMiddleware(["admin", "manager"]));
+router.use(roleMiddleware(["admin"]));
 
 // GET /summary
 router.get("/summary", validate(getSummaryQuerySchema), (req, res, next) => {

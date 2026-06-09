@@ -4,9 +4,13 @@ import fs from "fs";
 
 const UPLOADS_DIR = path.resolve(process.cwd(), "uploads");
 const PRODUCTS_DIR = path.join(UPLOADS_DIR, "products");
+const AVATARS_DIR = path.join(UPLOADS_DIR, "avatars");
 
 if (!fs.existsSync(PRODUCTS_DIR)) {
   fs.mkdirSync(PRODUCTS_DIR, { recursive: true });
+}
+if (!fs.existsSync(AVATARS_DIR)) {
+  fs.mkdirSync(AVATARS_DIR, { recursive: true });
 }
 
 const storage = multer.diskStorage({
@@ -38,6 +42,23 @@ export const uploadProductImage = multer({
   fileFilter,
   limits: { fileSize: 2 * 1024 * 1024 },
 }).single("image");
+
+const avatarStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, AVATARS_DIR);
+  },
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const name = `avatar-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+    cb(null, name);
+  },
+});
+
+export const uploadAvatar = multer({
+  storage: avatarStorage,
+  fileFilter,
+  limits: { fileSize: 2 * 1024 * 1024 },
+}).single("avatar");
 
 export function deleteImage(filename: string) {
   const filePath = path.join(PRODUCTS_DIR, path.basename(filename));

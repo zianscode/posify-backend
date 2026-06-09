@@ -22,6 +22,7 @@ import userRouter from "./modules/user/user.routes";
 import settingRouter from "./modules/setting/setting.routes";
 import reportRouter from "./modules/report/report.routes";
 import notificationRouter from "./modules/notification/notification.routes";
+import adminRouter from "./modules/admin/admin.routes";
 
 const app = express();
 const server = createServer(app);
@@ -54,7 +55,7 @@ app.get("/health", async (req, res, next) => {
     await prisma.$queryRaw`SELECT 1`;
     sendSuccess({
       res,
-      message: "Server POSify dalam kondisi sehat dan terhubung ke database",
+      message: "Server Warmindo dalam kondisi sehat dan terhubung ke database",
       data: {
         uptime: process.uptime(),
         timestamp: new Date(),
@@ -70,7 +71,7 @@ app.get("/health", async (req, res, next) => {
 app.get("/api/v1", (req, res) => {
   sendSuccess({
     res,
-    message: "Selamat datang di POSify API v1",
+    message: "Selamat datang di Warmindo API v1",
   });
 });
 
@@ -88,6 +89,7 @@ app.use("/api/v1/users", userRouter);
 app.use("/api/v1/settings", settingRouter);
 app.use("/api/v1/reports", reportRouter);
 app.use("/api/v1/notifications", notificationRouter);
+app.use("/api/v1/admin", adminRouter);
 
 // Error handling middleware
 app.use(errorMiddleware);
@@ -96,7 +98,7 @@ app.use(errorMiddleware);
 const PORT = env.PORT;
 server.listen(PORT, () => {
   console.log(
-    `🚀 POSify Backend berjalan dalam mode [${env.NODE_ENV}] pada port ${PORT}`,
+    `🚀 Warmindo Backend berjalan dalam mode [${env.NODE_ENV}] pada port ${PORT}`,
   );
 });
 

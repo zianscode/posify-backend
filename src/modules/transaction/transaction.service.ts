@@ -40,7 +40,7 @@ export class TransactionService {
 
     const { discount = 0, tax = 0, paidAmount, paymentMethodId, items } = data;
 
-    // 2. Fetch all products to verify existence and check stock
+    // 2. Fetch all products to verify existence
     const productIds = items.map((i) => i.productId);
     const products = await prisma.product.findMany({
       where: { id: { in: productIds } },
@@ -48,7 +48,7 @@ export class TransactionService {
 
     const productMap = new Map(products.map((p) => [p.id, p]));
 
-    // Validate products and stock, and calculate subtotal
+    // Calculate subtotal from product data (stock check done inside transaction)
     let subtotal = 0;
     const itemsData = items.map((item) => {
       const product = productMap.get(item.productId);
@@ -56,13 +56,7 @@ export class TransactionService {
         throw new BadRequestError(`Produk dengan ID ${item.productId} tidak ditemukan`);
       }
 
-      if (product.stock < item.quantity) {
-        throw new BadRequestError(
-          `Stok produk "${product.name}" tidak mencukupi. Stok saat ini: ${product.stock}, diminta: ${item.quantity}`
-        );
-      }
-
-      const price = Number(product.price);
+      const price = product.price.toNumber();
       const itemDiscount = item.discount ?? 0;
       const itemTotal = (price - itemDiscount) * item.quantity;
       subtotal += itemTotal;
@@ -110,6 +104,22 @@ export class TransactionService {
 
       const nextSeq = String(count + 1).padStart(4, "0");
       const invoiceNo = `INV-${todayStr}-${nextSeq}`;
+
+      // Re-validate stock inside transaction (prevents race condition)
+      for (const item of itemsData) {
+        const currentProduct = await tx.product.findUnique({
+          where: { id: item.productId },
+          select: { stock: true, name: true },
+        });
+        if (!currentProduct) {
+          throw new BadRequestError(`Produk dengan ID ${item.productId} tidak ditemukan`);
+        }
+        if (currentProduct.stock < item.quantity) {
+          throw new BadRequestError(
+            `Stok produk "${currentProduct.name}" tidak mencukupi. Stok saat ini: ${currentProduct.stock}, diminta: ${item.quantity}`
+          );
+        }
+      }
 
       // Create transaction record
       const transaction = await tx.transaction.create({
@@ -169,7 +179,7 @@ export class TransactionService {
             quantity: item.quantity,
             type: "OUT",
             description: `Transaksi POS - ${invoiceNo}`,
-            userId: userId ?? null,
+            userId,
           },
         });
       }
@@ -193,12 +203,13 @@ export class TransactionService {
   }
 
   private async notifyLowStock(outletId: number, itemsData: any[]) {
-    for (const item of itemsData) {
-      const product = await prisma.product.findUnique({
-        where: { id: item.productId },
-      });
+    const productIds = itemsData.map((i) => i.productId);
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+    });
 
-      if (product && product.stock <= product.minStock) {
+    for (const product of products) {
+      if (product.stock <= product.minStock) {
         await notificationService.create({
           type: "STOCK_ALERT",
           title: "Stok Menipis",

@@ -11,7 +11,8 @@ export class DashboardController {
   async getSummary(req: Request, res: Response, next: NextFunction) {
     try {
       const { startDate, endDate } = req.query as any;
-      const result = await dashboardService.getSummary(startDate, endDate);
+      const outletId = req.user?.outletId ?? undefined;
+      const result = await dashboardService.getSummary(startDate, endDate, outletId);
 
       sendSuccess({
         res,
@@ -29,7 +30,8 @@ export class DashboardController {
   async getSalesTrend(req: Request, res: Response, next: NextFunction) {
     try {
       const { days, startDate, endDate } = req.query as any;
-      const result = await dashboardService.getSalesTrend(days, startDate, endDate);
+      const outletId = req.user?.outletId ?? undefined;
+      const result = await dashboardService.getSalesTrend(days, startDate, endDate, outletId);
 
       sendSuccess({
         res,
@@ -47,7 +49,8 @@ export class DashboardController {
   async getTopProducts(req: Request, res: Response, next: NextFunction) {
     try {
       const { limit, startDate, endDate } = req.query as any;
-      const result = await dashboardService.getTopProducts(limit, startDate, endDate);
+      const outletId = req.user?.outletId ?? undefined;
+      const result = await dashboardService.getTopProducts(limit, startDate, endDate, outletId);
 
       sendSuccess({
         res,

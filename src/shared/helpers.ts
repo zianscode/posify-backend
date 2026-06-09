@@ -24,7 +24,7 @@ export const signAccessToken = (payload: TokenPayload): string => {
 };
 
 export const signRefreshToken = (payload: TokenPayload): string => {
-  return jwt.sign(payload, env.JWT_SECRET, { expiresIn: "7d" });
+  return jwt.sign(payload, env.JWT_SECRET, { expiresIn: "30d" });
 };
 
 export const verifyToken = (token: string): TokenPayload => {

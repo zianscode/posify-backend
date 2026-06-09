@@ -126,7 +126,7 @@ export class UserService {
   ) {
     await this.getUserById(id);
 
-    if (data.email) {
+    if (data.email !== undefined) {
       const existing = await prisma.user.findUnique({
         where: { email: data.email },
       });

@@ -51,11 +51,11 @@ router.put(
   }
 );
 
-// DELETE product: Protected (admin, manager only)
+// DELETE product: Protected (admin only)
 router.delete(
   "/:id",
   authMiddleware,
-  roleMiddleware(["admin", "manager"]),
+  roleMiddleware(["admin"]),
   validate(getProductByIdSchema),
   (req, res, next) => {
     productController.delete(req, res, next);

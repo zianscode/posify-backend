@@ -23,12 +23,12 @@ router.patch("/read-all", (req, res, next) => {
   notificationController.markAllAsRead(req, res, next);
 });
 
-router.delete("/:id", (req, res, next) => {
-  notificationController.delete(req, res, next);
-});
-
 router.delete("/", (req, res, next) => {
   notificationController.deleteAll(req, res, next);
+});
+
+router.delete("/:id", (req, res, next) => {
+  notificationController.delete(req, res, next);
 });
 
 export default router;

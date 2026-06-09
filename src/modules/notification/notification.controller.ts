@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { NotificationService } from "./notification.service";
 import { sendSuccess } from "../../shared/response";
+import { BadRequestError } from "../../shared/errors";
 
 const notificationService = new NotificationService();
 
@@ -26,6 +27,7 @@ export class NotificationController {
     try {
       const userId = req.user!.userId;
       const id = parseInt(req.params.id as string);
+      if (isNaN(id)) throw new BadRequestError("ID notifikasi tidak valid");
       await notificationService.markAsRead(id, userId);
 
       sendSuccess({
@@ -73,6 +75,7 @@ export class NotificationController {
     try {
       const userId = req.user!.userId;
       const id = parseInt(req.params.id as string);
+      if (isNaN(id)) throw new BadRequestError("ID notifikasi tidak valid");
       await notificationService.delete(id, userId);
 
       sendSuccess({

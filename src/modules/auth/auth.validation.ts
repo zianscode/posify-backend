@@ -13,6 +13,34 @@ export const refreshTokenSchema = z.object({
   }),
 });
 
+export const registerSchema = z.object({
+  body: z.object({
+    name: z.string({ message: "Nama wajib diisi" }).min(1, "Nama tidak boleh kosong").max(100, "Nama maksimal 100 karakter"),
+    email: z.string().min(1, "Email wajib diisi").email("Format email tidak valid"),
+    password: z.string().min(8, "Password minimal 8 karakter"),
+    role: z.enum(["manager", "kasir"], { message: "Role harus manager atau kasir" }),
+  }),
+});
+
+export const forgotPasswordSchema = z.object({
+  body: z.object({
+    email: z.string().min(1, "Email wajib diisi").email("Format email tidak valid"),
+  }),
+});
+
+export const resetPasswordSchema = z.object({
+  body: z.object({
+    token: z.string().min(1, "Token wajib diisi"),
+    password: z.string().min(8, "Password minimal 8 karakter"),
+  }),
+});
+
+export const googleAuthSchema = z.object({
+  body: z.object({
+    idToken: z.string().min(1, "ID token wajib diisi"),
+  }),
+});
+
 export const changePasswordSchema = z.object({
   body: z.object({
     currentPassword: z

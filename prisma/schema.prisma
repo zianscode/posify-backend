@@ -30,18 +30,21 @@ model Outlet {
 }
 
 model User {
-  id             Int             @id @default(autoincrement())
-  name           String
-  email          String          @unique
-  password       String
-  roleId         Int             @map("role_id")
-  outletId       Int?            @map("outlet_id")
-  createdAt      DateTime        @default(now()) @map("created_at")
-  updatedAt      DateTime        @updatedAt @map("updated_at")
-  role           Role            @relation(fields: [roleId], references: [id])
-  outlet         Outlet?         @relation(fields: [outletId], references: [id])
-  transactions   Transaction[]
-  stockMovements StockMovement[]
+  id                 Int             @id @default(autoincrement())
+  name               String
+  email              String          @unique
+  password           String
+  roleId             Int             @map("role_id")
+  outletId           Int?            @map("outlet_id")
+  avatar             String?
+  resetPasswordToken      String?    @map("reset_password_token")
+  resetPasswordExpires    DateTime?  @map("reset_password_expires")
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+  role               Role            @relation(fields: [roleId], references: [id])
+  outlet             Outlet?         @relation(fields: [outletId], references: [id])
+  transactions       Transaction[]
+  stockMovements     StockMovement[]
 
   @@map("users")
 }
