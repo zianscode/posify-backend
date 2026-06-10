@@ -30,6 +30,7 @@ export class TransactionService {
         productId: number;
         quantity: number;
         discount?: number;
+        addonIds?: number[];
       }[];
     }
   ) {
@@ -67,6 +68,7 @@ export class TransactionService {
         price,
         discount: itemDiscount,
         total: itemTotal,
+        addonIds: item.addonIds,
       };
     });
 
@@ -83,7 +85,7 @@ export class TransactionService {
     }
 
     // 4. Atomically insert transaction, items, update stocks and write movements logs
-    const transaction = await prisma.$transaction(async (tx) => {
+    const transactionId = await prisma.$transaction(async (tx) => {
       // Verify payment method exists
       const paymentMethod = await tx.paymentMethod.findUnique({
         where: { id: paymentMethodId },
@@ -121,7 +123,7 @@ export class TransactionService {
         }
       }
 
-      // Create transaction record
+      // Create transaction record with items
       const transaction = await tx.transaction.create({
         data: {
           invoiceNo,
@@ -145,11 +147,7 @@ export class TransactionService {
           },
         },
         include: {
-          items: {
-            include: {
-              product: true,
-            },
-          },
+          items: true,
           paymentMethod: true,
           outlet: true,
           user: {
@@ -161,6 +159,21 @@ export class TransactionService {
           },
         },
       });
+
+      // Save addon relations for each item
+      for (let i = 0; i < itemsData.length; i++) {
+        const item = itemsData[i]!;
+        if (item.addonIds?.length) {
+          const createdItem = transaction.items[i]!;
+          await tx.transactionItemAddOn.createMany({
+            data: item.addonIds.map((addOnId) => ({
+              transactionItemId: createdItem.id,
+              addOnId,
+              qty: 1,
+            })),
+          });
+        }
+      }
 
       // Update product stocks and add stock movements logs
       for (const item of itemsData) {
@@ -184,14 +197,40 @@ export class TransactionService {
         });
       }
 
-      return transaction;
+      return transaction.id;
+    });
+
+    // Fetch complete transaction with addon data
+    const result = await prisma.transaction.findUnique({
+      where: { id: transactionId },
+      include: {
+        items: {
+          include: {
+            product: true,
+            addons: {
+              include: {
+                addOn: true,
+              },
+            },
+          },
+        },
+        paymentMethod: true,
+        outlet: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
     });
 
     // Create notifications after successful transaction
     await notificationService.create({
       type: "NEW_TRANSACTION",
       title: "Transaksi Baru",
-      message: `Transaksi ${transaction.invoiceNo} sebesar Rp ${Number(transaction.grandTotal).toLocaleString("id-ID")}`,
+      message: `Transaksi ${result!.invoiceNo} sebesar Rp ${Number(result!.grandTotal).toLocaleString("id-ID")}`,
       link: `/history`,
       outletId,
     });
@@ -199,7 +238,7 @@ export class TransactionService {
     // Check low stock for each product
     await this.notifyLowStock(outletId, itemsData);
 
-    return transaction;
+    return result;
   }
 
   private async notifyLowStock(outletId: number, itemsData: any[]) {
@@ -267,6 +306,11 @@ export class TransactionService {
           items: {
             include: {
               product: true,
+              addons: {
+                include: {
+                  addOn: true,
+                },
+              },
             },
           },
           paymentMethod: true,
@@ -309,6 +353,11 @@ export class TransactionService {
         items: {
           include: {
             product: true,
+            addons: {
+              include: {
+                addOn: true,
+              },
+            },
           },
         },
         paymentMethod: true,
