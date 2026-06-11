@@ -2,6 +2,17 @@ import { prisma } from "../../config/database";
 import { NotFoundError, BadRequestError } from "../../shared/errors";
 import { NotificationService } from "../notification/notification.service";
 
+type AddonShape = { id: number; name: string; price: number; qty: number };
+
+function flattenAddons(addons: { qty: number; addOn: { id: number; name: string; price: { toNumber: () => number } | number } }[]): AddonShape[] {
+  return addons.map((a) => ({
+    id: a.addOn.id,
+    name: a.addOn.name,
+    price: typeof a.addOn.price === "object" ? a.addOn.price.toNumber() : Number(a.addOn.price),
+    qty: a.qty,
+  }));
+}
+
 export interface GetTransactionsFilters {
   page: number;
   limit: number;
@@ -238,7 +249,13 @@ export class TransactionService {
     // Check low stock for each product
     await this.notifyLowStock(outletId, itemsData);
 
-    return result;
+    return {
+      ...result,
+      items: result!.items.map((item) => ({
+        ...item,
+        addons: flattenAddons(item.addons as any),
+      })),
+    };
   }
 
   private async notifyLowStock(outletId: number, itemsData: any[]) {
@@ -333,7 +350,13 @@ export class TransactionService {
     const totalPages = Math.ceil(total / limit);
 
     return {
-      transactions,
+      transactions: transactions.map((t) => ({
+        ...t,
+        items: t.items.map((item) => ({
+          ...item,
+          addons: flattenAddons(item.addons as any),
+        })),
+      })),
       meta: {
         page,
         limit,
@@ -376,6 +399,12 @@ export class TransactionService {
       throw new NotFoundError("Transaksi tidak ditemukan");
     }
 
-    return transaction;
+    return {
+      ...transaction,
+      items: transaction.items.map((item) => ({
+        ...item,
+        addons: flattenAddons(item.addons as any),
+      })),
+    };
   }
 }
