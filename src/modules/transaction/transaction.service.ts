@@ -42,6 +42,7 @@ export class TransactionService {
         quantity: number;
         discount?: number;
         addonIds?: number[];
+        addons?: { id: number; qty?: number }[];
       }[];
     }
   ) {
@@ -60,9 +61,25 @@ export class TransactionService {
 
     const productMap = new Map(products.map((p) => [p.id, p]));
 
-    // Calculate subtotal from product data (stock check done inside transaction)
+    // Fetch all add-ons used in this transaction to verify existence and get prices
+    const itemAddonList = items.map(item => {
+      if (item.addons && item.addons.length > 0) {
+        return item.addons.map(a => ({ id: a.id, qty: a.qty ?? 1 }));
+      } else if (item.addonIds && item.addonIds.length > 0) {
+        return item.addonIds.map(id => ({ id, qty: 1 }));
+      }
+      return [];
+    });
+
+    const allAddonIds = Array.from(new Set(itemAddonList.flat().map(a => a.id)));
+    const addonsObjList = allAddonIds.length > 0 ? await prisma.addOn.findMany({
+      where: { id: { in: allAddonIds } },
+    }) : [];
+    const addonMap = new Map(addonsObjList.map((a) => [a.id, a]));
+
+    // Calculate subtotal from product data and addons
     let subtotal = 0;
-    const itemsData = items.map((item) => {
+    const itemsData = items.map((item, idx) => {
       const product = productMap.get(item.productId);
       if (!product) {
         throw new BadRequestError(`Produk dengan ID ${item.productId} tidak ditemukan`);
@@ -70,7 +87,18 @@ export class TransactionService {
 
       const price = product.price.toNumber();
       const itemDiscount = item.discount ?? 0;
-      const itemTotal = (price - itemDiscount) * item.quantity;
+      
+      const resolvedAddons = itemAddonList[idx] || [];
+      let addonSum = 0;
+      for (const addonItem of resolvedAddons) {
+        const addonObj = addonMap.get(addonItem.id);
+        if (!addonObj) {
+          throw new BadRequestError(`Add-on dengan ID ${addonItem.id} tidak ditemukan`);
+        }
+        addonSum += addonObj.price.toNumber() * addonItem.qty;
+      }
+
+      const itemTotal = (price - itemDiscount) * item.quantity + addonSum;
       subtotal += itemTotal;
 
       return {
@@ -79,14 +107,15 @@ export class TransactionService {
         price,
         discount: itemDiscount,
         total: itemTotal,
-        addonIds: item.addonIds,
+        addons: resolvedAddons,
       };
     });
 
-    // 3. Pricing calculations
-    const taxAmount = subtotal * (tax / 100);
+    // 3. Pricing calculations (tax is calculated after applying discount)
     const discountAmount = discount;
-    const grandTotal = Math.max(0, subtotal + taxAmount - discountAmount);
+    const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
+    const taxAmount = subtotalAfterDiscount * (tax / 100);
+    const grandTotal = subtotalAfterDiscount + taxAmount;
     const changeAmount = paidAmount - grandTotal;
 
     if (paidAmount < grandTotal) {
@@ -174,13 +203,13 @@ export class TransactionService {
       // Save addon relations for each item
       for (let i = 0; i < itemsData.length; i++) {
         const item = itemsData[i]!;
-        if (item.addonIds?.length) {
+        if (item.addons.length) {
           const createdItem = transaction.items[i]!;
           await tx.transactionItemAddOn.createMany({
-            data: item.addonIds.map((addOnId) => ({
+            data: item.addons.map((addon) => ({
               transactionItemId: createdItem.id,
-              addOnId,
-              qty: 1,
+              addOnId: addon.id,
+              qty: addon.qty,
             })),
           });
         }

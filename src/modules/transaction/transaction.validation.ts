@@ -20,6 +20,12 @@ export const createTransactionSchema = z.object({
         }).positive("Kuantitas harus lebih besar dari 0"),
         discount: z.number().nonnegative("Diskon item tidak boleh negatif").optional().default(0),
         addonIds: z.array(z.number().int()).optional(),
+        addons: z.array(
+          z.object({
+            id: z.number().int(),
+            qty: z.number().int().positive().optional().default(1),
+          })
+        ).optional(),
       })
     ).min(1, "Transaksi minimal harus memiliki 1 item"),
   }),
